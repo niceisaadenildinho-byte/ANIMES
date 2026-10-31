@@ -40,7 +40,7 @@ public class MainActivity extends Activity {
         CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true);
         webView.setWebViewClient(new WebViewClient());
         webView.setWebChromeClient(new WebChromeClient());
-        webView.loadUrl("file:///android_asset/offline_catalog.html");
+        webView.loadUrl("file:///android_asset/online_catalog.html");
     }
 
     @Override
