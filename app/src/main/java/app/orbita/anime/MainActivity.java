@@ -1,7 +1,9 @@
 package app.orbita.anime;
 
+import android.accounts.AccountManager;
 import android.app.Activity;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.view.Gravity;
@@ -17,22 +19,20 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.android.gms.auth.api.signin.GoogleSignIn;
-import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
-import com.google.android.gms.auth.api.signin.GoogleSignInClient;
-import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
-import com.google.android.gms.common.api.ApiException;
-import com.google.android.gms.tasks.Task;
+import com.google.android.gms.common.AccountPicker;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.Arrays;
+
 public class MainActivity extends Activity {
-    private static final int RC_SIGN_IN = 9001;
+    private static final int RC_ACCOUNT_PICKER = 9001;
+    private static final String PREFS = "orbita_account";
+    private static final String KEY_EMAIL = "email";
 
     private WebView webView;
-    private GoogleSignInClient googleSignInClient;
-    private GoogleSignInAccount currentAccount;
+    private String currentEmail = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,22 +40,18 @@ public class MainActivity extends Activity {
         getWindow().setStatusBarColor(0xFF070708);
         getWindow().setNavigationBarColor(0xFF070708);
 
-        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                .requestEmail()
-                .requestProfile()
-                .build();
-        googleSignInClient = GoogleSignIn.getClient(this, gso);
+        SharedPreferences prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
+        currentEmail = prefs.getString(KEY_EMAIL, "");
 
-        currentAccount = GoogleSignIn.getLastSignedInAccount(this);
-        if (currentAccount != null) {
-            showApp(currentAccount);
+        if (currentEmail != null && !currentEmail.trim().isEmpty()) {
+            showApp();
         } else {
             showLoginScreen();
         }
     }
 
     private void showLoginScreen() {
-        currentAccount = null;
+        currentEmail = "";
         if (webView != null) {
             webView.stopLoading();
             webView.destroy();
@@ -79,7 +75,7 @@ public class MainActivity extends Activity {
                 LinearLayout.LayoutParams.WRAP_CONTENT));
 
         TextView subtitle = new TextView(this);
-        subtitle.setText("Entre com uma conta Google para acessar seu perfil, listas e progresso.");
+        subtitle.setText("Entre com sua conta Google e continue sua jornada no Órbita Anime.");
         subtitle.setTextColor(Color.rgb(170, 170, 180));
         subtitle.setTextSize(15);
         subtitle.setGravity(Gravity.CENTER);
@@ -96,17 +92,18 @@ public class MainActivity extends Activity {
         googleButton.setTextColor(Color.rgb(15, 15, 18));
         googleButton.setBackgroundColor(Color.WHITE);
         googleButton.setPadding(dp(16), dp(12), dp(16), dp(12));
-        googleButton.setOnClickListener(v -> startGoogleSignIn());
+        googleButton.setOnClickListener(v -> startGoogleAccountPicker());
         LinearLayout.LayoutParams buttonParams = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 dp(54));
         root.addView(googleButton, buttonParams);
 
         TextView note = new TextView(this);
-        note.setText("O Órbita Anime usa apenas a conta escolhida no Google. Não é login do ChatGPT.");
-        note.setTextColor(Color.rgb(105, 105, 115));
+        note.setText("🔒 Seus dados ficam protegidos. O Órbita Anime nunca recebe sua senha do Google. A conta escolhida é usada apenas para identificar seu perfil neste dispositivo.");
+        note.setTextColor(Color.rgb(125, 125, 136));
         note.setTextSize(12);
         note.setGravity(Gravity.CENTER);
+        note.setLineSpacing(0, 1.12f);
         LinearLayout.LayoutParams noteParams = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT);
@@ -116,28 +113,43 @@ public class MainActivity extends Activity {
         setContentView(root);
     }
 
-    private void startGoogleSignIn() {
-        Intent signInIntent = googleSignInClient.getSignInIntent();
-        startActivityForResult(signInIntent, RC_SIGN_IN);
+    private void startGoogleAccountPicker() {
+        try {
+            AccountPicker.AccountChooserOptions options =
+                    new AccountPicker.AccountChooserOptions.Builder()
+                            .setAllowableAccountsTypes(Arrays.asList("com.google"))
+                            .build();
+            Intent intent = AccountPicker.newChooseAccountIntent(options);
+            startActivityForResult(intent, RC_ACCOUNT_PICKER);
+        } catch (Exception e) {
+            Toast.makeText(this, "Não foi possível abrir as contas Google neste celular.", Toast.LENGTH_LONG).show();
+        }
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode != RC_SIGN_IN) return;
+        if (requestCode != RC_ACCOUNT_PICKER) return;
 
-        Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
-        try {
-            GoogleSignInAccount account = task.getResult(ApiException.class);
-            currentAccount = account;
-            showApp(account);
-        } catch (ApiException e) {
-            Toast.makeText(this, "Não foi possível entrar com essa conta. Tente novamente.", Toast.LENGTH_LONG).show();
+        if (resultCode == RESULT_OK && data != null) {
+            String email = data.getStringExtra(AccountManager.KEY_ACCOUNT_NAME);
+            String type = data.getStringExtra(AccountManager.KEY_ACCOUNT_TYPE);
+
+            if (email != null && !email.trim().isEmpty() && (type == null || "com.google".equals(type))) {
+                currentEmail = email.trim();
+                getSharedPreferences(PREFS, MODE_PRIVATE)
+                        .edit()
+                        .putString(KEY_EMAIL, currentEmail)
+                        .apply();
+                showApp();
+                return;
+            }
+
+            Toast.makeText(this, "Não consegui identificar essa conta Google.", Toast.LENGTH_LONG).show();
         }
     }
 
-    private void showApp(GoogleSignInAccount account) {
-        currentAccount = account;
+    private void showApp() {
         webView = new WebView(this);
         webView.setBackgroundColor(0xFF070708);
         webView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
@@ -164,15 +176,28 @@ public class MainActivity extends Activity {
         webView.loadUrl("file:///android_asset/online_catalog.html");
     }
 
+    private String displayNameFromEmail(String email) {
+        if (email == null || email.trim().isEmpty()) return "Usuário Órbita";
+        String local = email.split("@")[0].replace('.', ' ').replace('_', ' ').replace('-', ' ').trim();
+        if (local.isEmpty()) return "Usuário Órbita";
+        String[] parts = local.split("\\s+");
+        StringBuilder out = new StringBuilder();
+        for (String p : parts) {
+            if (p.isEmpty()) continue;
+            if (out.length() > 0) out.append(' ');
+            out.append(Character.toUpperCase(p.charAt(0)));
+            if (p.length() > 1) out.append(p.substring(1));
+        }
+        return out.length() == 0 ? "Usuário Órbita" : out.toString();
+    }
+
     private String accountJson() {
         JSONObject o = new JSONObject();
         try {
-            if (currentAccount != null) {
-                o.put("name", currentAccount.getDisplayName() == null ? "" : currentAccount.getDisplayName());
-                o.put("email", currentAccount.getEmail() == null ? "" : currentAccount.getEmail());
-                o.put("id", currentAccount.getId() == null ? "" : currentAccount.getId());
-                o.put("photo", currentAccount.getPhotoUrl() == null ? "" : currentAccount.getPhotoUrl().toString());
-            }
+            o.put("name", displayNameFromEmail(currentEmail));
+            o.put("email", currentEmail == null ? "" : currentEmail);
+            o.put("id", currentEmail == null ? "" : currentEmail.toLowerCase());
+            o.put("photo", "");
         } catch (JSONException ignored) {}
         return o.toString();
     }
@@ -185,7 +210,11 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public void logout() {
-            runOnUiThread(() -> googleSignInClient.signOut().addOnCompleteListener(task -> showLoginScreen()));
+            runOnUiThread(() -> {
+                getSharedPreferences(PREFS, MODE_PRIVATE).edit().clear().apply();
+                currentEmail = "";
+                showLoginScreen();
+            });
         }
     }
 
