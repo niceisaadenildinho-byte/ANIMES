@@ -5,7 +5,8 @@
 
     <application
         android:allowBackup="true"
-        android:icon="@drawable/niez_animes_icon"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
         android:label="Niez Animes"
         android:usesCleartextTraffic="false"
         android:theme="@android:style/Theme.Material.NoActionBar">
