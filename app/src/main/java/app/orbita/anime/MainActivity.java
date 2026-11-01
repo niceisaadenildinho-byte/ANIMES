@@ -243,6 +243,20 @@ public class MainActivity extends Activity {
 
     private class AccountBridge {
         @JavascriptInterface
+        public void playOfficialVideo(String videoId, String title, String publisher) {
+            if (videoId == null || !videoId.matches("[A-Za-z0-9_-]{11}")) return;
+            final String safeTitle = title == null ? "Niez Animes" : title.substring(0, Math.min(title.length(), 200));
+            final String safePublisher = publisher == null ? "YouTube" : publisher.substring(0, Math.min(publisher.length(), 200));
+            runOnUiThread(() -> {
+                Intent player = new Intent(MainActivity.this, OfficialVideoActivity.class);
+                player.putExtra(OfficialVideoActivity.EXTRA_VIDEO_ID, videoId);
+                player.putExtra(OfficialVideoActivity.EXTRA_TITLE, safeTitle);
+                player.putExtra(OfficialVideoActivity.EXTRA_PUBLISHER, safePublisher);
+                startActivity(player);
+            });
+        }
+
+        @JavascriptInterface
         public String getAccountJson() {
             return accountJson();
         }
@@ -284,3 +298,4 @@ public class MainActivity extends Activity {
         super.onDestroy();
     }
 }
+
