@@ -69,7 +69,7 @@ public class MainActivity extends Activity {
         root.setBackgroundColor(Color.rgb(7, 7, 8));
 
         TextView logo = new TextView(this);
-        logo.setText("Órbita Anime");
+        logo.setText("Niez Animes");
         logo.setTextColor(Color.WHITE);
         logo.setTextSize(34);
         logo.setGravity(Gravity.CENTER);
@@ -79,7 +79,7 @@ public class MainActivity extends Activity {
                 LinearLayout.LayoutParams.WRAP_CONTENT));
 
         TextView subtitle = new TextView(this);
-        subtitle.setText("Entre com sua conta Google e continue sua jornada no Órbita Anime.");
+        subtitle.setText("Entre com sua conta Google e continue sua jornada no Niez Animes.");
         subtitle.setTextColor(Color.rgb(170, 170, 180));
         subtitle.setTextSize(15);
         subtitle.setGravity(Gravity.CENTER);
@@ -103,7 +103,7 @@ public class MainActivity extends Activity {
         root.addView(googleButton, buttonParams);
 
         TextView note = new TextView(this);
-        note.setText("🔒 Seus dados ficam protegidos. O Órbita Anime nunca recebe sua senha do Google. A conta escolhida é usada apenas para identificar seu perfil neste dispositivo.");
+        note.setText("🔒 Seus dados ficam protegidos. O Niez Animes nunca recebe sua senha do Google. A conta escolhida é usada apenas para identificar seu perfil neste dispositivo.");
         note.setTextColor(Color.rgb(125, 125, 136));
         note.setTextSize(12);
         note.setGravity(Gravity.CENTER);
@@ -216,9 +216,9 @@ public class MainActivity extends Activity {
     }
 
     private String displayNameFromEmail(String email) {
-        if (email == null || email.trim().isEmpty()) return "Usuário Órbita";
+        if (email == null || email.trim().isEmpty()) return "Usuário Niez";
         String local = email.split("@")[0].replace('.', ' ').replace('_', ' ').replace('-', ' ').trim();
-        if (local.isEmpty()) return "Usuário Órbita";
+        if (local.isEmpty()) return "Usuário Niez";
         String[] parts = local.split("\\s+");
         StringBuilder out = new StringBuilder();
         for (String p : parts) {
@@ -227,7 +227,7 @@ public class MainActivity extends Activity {
             out.append(Character.toUpperCase(p.charAt(0)));
             if (p.length() > 1) out.append(p.substring(1));
         }
-        return out.length() == 0 ? "Usuário Órbita" : out.toString();
+        return out.length() == 0 ? "Usuário Niez" : out.toString();
     }
 
     private String accountJson() {

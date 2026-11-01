@@ -5,8 +5,8 @@
 
     <application
         android:allowBackup="true"
-        android:icon="@drawable/ic_launcher"
-        android:label="Órbita Anime"
+        android:icon="@drawable/niez_animes_icon"
+        android:label="Niez Animes"
         android:usesCleartextTraffic="false"
         android:theme="@android:style/Theme.Material.NoActionBar">
         <activity
