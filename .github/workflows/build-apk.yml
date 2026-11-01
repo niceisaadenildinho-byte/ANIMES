@@ -1,4 +1,4 @@
-name: Gerar APK Órbita Anime
+name: Gerar APK Niez Animes
 
 on:
   workflow_dispatch:
@@ -24,6 +24,12 @@ jobs:
       - name: Montar catálogo local 30k+
         run: python scripts/build_catalog.py
 
+      - name: Preparar ícone adaptativo Niez Animes
+        run: |
+          mkdir -p app/src/main/res/drawable-nodpi
+          cp app/src/main/res/mipmap-xxxhdpi/ic_launcher.png app/src/main/res/drawable-nodpi/niez_foreground_runtime.png
+          file app/src/main/res/drawable-nodpi/niez_foreground_runtime.png
+
       - name: Configurar Android SDK
         run: |
           yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
@@ -40,6 +46,6 @@ jobs:
       - name: Publicar APK
         uses: actions/upload-artifact@v4
         with:
-          name: Orbita-Anime-Catalogo-30k
+          name: Niez-Animes-APK
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
