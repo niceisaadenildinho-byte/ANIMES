@@ -5,11 +5,13 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.View;
 import android.webkit.CookieManager;
 import android.webkit.JavascriptInterface;
+import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -28,11 +30,13 @@ import java.util.Arrays;
 
 public class MainActivity extends Activity {
     private static final int RC_ACCOUNT_PICKER = 9001;
+    private static final int RC_FILE_CHOOSER = 9002;
     private static final String PREFS = "orbita_account";
     private static final String KEY_EMAIL = "email";
 
     private WebView webView;
     private String currentEmail = "";
+    private ValueCallback<Uri[]> fileChooserCallback;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -126,9 +130,34 @@ public class MainActivity extends Activity {
         }
     }
 
+    private void openImageChooser() {
+        try {
+            Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+            intent.addCategory(Intent.CATEGORY_OPENABLE);
+            intent.setType("image/*");
+            startActivityForResult(Intent.createChooser(intent, "Escolher foto"), RC_FILE_CHOOSER);
+        } catch (Exception e) {
+            if (fileChooserCallback != null) {
+                fileChooserCallback.onReceiveValue(null);
+                fileChooserCallback = null;
+            }
+            Toast.makeText(this, "Não foi possível abrir sua galeria.", Toast.LENGTH_LONG).show();
+        }
+    }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == RC_FILE_CHOOSER) {
+            if (fileChooserCallback != null) {
+                Uri[] result = WebChromeClient.FileChooserParams.parseResult(resultCode, data);
+                fileChooserCallback.onReceiveValue(result);
+                fileChooserCallback = null;
+            }
+            return;
+        }
+
         if (requestCode != RC_ACCOUNT_PICKER) return;
 
         if (resultCode == RESULT_OK && data != null) {
@@ -172,7 +201,17 @@ public class MainActivity extends Activity {
         CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true);
         webView.addJavascriptInterface(new AccountBridge(), "OrbitaAccount");
         webView.setWebViewClient(new WebViewClient());
-        webView.setWebChromeClient(new WebChromeClient());
+        webView.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public boolean onShowFileChooser(WebView webView, ValueCallback<Uri[]> filePathCallback, FileChooserParams fileChooserParams) {
+                if (fileChooserCallback != null) {
+                    fileChooserCallback.onReceiveValue(null);
+                }
+                fileChooserCallback = filePathCallback;
+                openImageChooser();
+                return true;
+            }
+        });
         webView.loadUrl("file:///android_asset/online_catalog.html");
     }
 
@@ -230,6 +269,10 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+        if (fileChooserCallback != null) {
+            fileChooserCallback.onReceiveValue(null);
+            fileChooserCallback = null;
+        }
         if (webView != null) {
             webView.loadUrl("about:blank");
             webView.stopLoading();
