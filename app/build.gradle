@@ -7,11 +7,11 @@ android {
     compileSdk 35
 
     defaultConfig {
-        applicationId 'app.orbita.anime'
+        applicationId 'app.niez.tokyoanime'
         minSdk 23
         targetSdk 35
-        versionCode 17
-        versionName '1.4.0'
+        versionCode 1
+        versionName '1.0.0'
     }
 
     buildTypes {
