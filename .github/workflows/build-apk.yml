@@ -22,11 +22,13 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Validar JavaScript do player e fontes
+      - name: Validar JavaScript do app
         run: |
           node --check app/src/main/assets/video_sources.js
           node --check app/src/main/assets/player_enhance.js
           node --check app/src/main/assets/online_enhance.js
+          node --check app/src/main/assets/explore_enhance.js
+          node --check app/src/main/assets/details_plus.js
           node tests/sources.test.cjs
 
       - name: Testar interface do player
@@ -57,4 +59,3 @@ jobs:
           name: Niez-Animes-APK
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
-
