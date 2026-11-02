@@ -47,11 +47,8 @@ public class MainActivity extends Activity {
         SharedPreferences prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
         currentEmail = prefs.getString(KEY_EMAIL, "");
 
-        if (currentEmail != null && !currentEmail.trim().isEmpty()) {
-            showApp();
-        } else {
-            showLoginScreen();
-        }
+        if (currentEmail != null && !currentEmail.trim().isEmpty()) showApp();
+        else showLoginScreen();
     }
 
     private void showLoginScreen() {
@@ -74,18 +71,14 @@ public class MainActivity extends Activity {
         logo.setTextSize(34);
         logo.setGravity(Gravity.CENTER);
         logo.setTypeface(null, android.graphics.Typeface.BOLD);
-        root.addView(logo, new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT));
+        root.addView(logo, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
 
         TextView subtitle = new TextView(this);
         subtitle.setText("Entre com sua conta Google e continue sua jornada no Niez Animes.");
         subtitle.setTextColor(Color.rgb(170, 170, 180));
         subtitle.setTextSize(15);
         subtitle.setGravity(Gravity.CENTER);
-        LinearLayout.LayoutParams subParams = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT);
+        LinearLayout.LayoutParams subParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         subParams.setMargins(0, dp(12), 0, dp(28));
         root.addView(subtitle, subParams);
 
@@ -97,10 +90,7 @@ public class MainActivity extends Activity {
         googleButton.setBackgroundColor(Color.WHITE);
         googleButton.setPadding(dp(16), dp(12), dp(16), dp(12));
         googleButton.setOnClickListener(v -> startGoogleAccountPicker());
-        LinearLayout.LayoutParams buttonParams = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                dp(54));
-        root.addView(googleButton, buttonParams);
+        root.addView(googleButton, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(54)));
 
         TextView note = new TextView(this);
         note.setText("🔒 Seus dados ficam protegidos. O Niez Animes nunca recebe sua senha do Google. A conta escolhida é usada apenas para identificar seu perfil neste dispositivo.");
@@ -108,9 +98,7 @@ public class MainActivity extends Activity {
         note.setTextSize(12);
         note.setGravity(Gravity.CENTER);
         note.setLineSpacing(0, 1.12f);
-        LinearLayout.LayoutParams noteParams = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT);
+        LinearLayout.LayoutParams noteParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         noteParams.setMargins(0, dp(20), 0, 0);
         root.addView(note, noteParams);
 
@@ -119,12 +107,10 @@ public class MainActivity extends Activity {
 
     private void startGoogleAccountPicker() {
         try {
-            AccountPicker.AccountChooserOptions options =
-                    new AccountPicker.AccountChooserOptions.Builder()
-                            .setAllowableAccountsTypes(Arrays.asList("com.google"))
-                            .build();
-            Intent intent = AccountPicker.newChooseAccountIntent(options);
-            startActivityForResult(intent, RC_ACCOUNT_PICKER);
+            AccountPicker.AccountChooserOptions options = new AccountPicker.AccountChooserOptions.Builder()
+                    .setAllowableAccountsTypes(Arrays.asList("com.google"))
+                    .build();
+            startActivityForResult(AccountPicker.newChooseAccountIntent(options), RC_ACCOUNT_PICKER);
         } catch (Exception e) {
             Toast.makeText(this, "Não foi possível abrir as contas Google neste celular.", Toast.LENGTH_LONG).show();
         }
@@ -159,21 +145,15 @@ public class MainActivity extends Activity {
         }
 
         if (requestCode != RC_ACCOUNT_PICKER) return;
-
         if (resultCode == RESULT_OK && data != null) {
             String email = data.getStringExtra(AccountManager.KEY_ACCOUNT_NAME);
             String type = data.getStringExtra(AccountManager.KEY_ACCOUNT_TYPE);
-
             if (email != null && !email.trim().isEmpty() && (type == null || "com.google".equals(type))) {
                 currentEmail = email.trim();
-                getSharedPreferences(PREFS, MODE_PRIVATE)
-                        .edit()
-                        .putString(KEY_EMAIL, currentEmail)
-                        .apply();
+                getSharedPreferences(PREFS, MODE_PRIVATE).edit().putString(KEY_EMAIL, currentEmail).apply();
                 showApp();
                 return;
             }
-
             Toast.makeText(this, "Não consegui identificar essa conta Google.", Toast.LENGTH_LONG).show();
         }
     }
@@ -196,6 +176,7 @@ public class MainActivity extends Activity {
         settings.setBuiltInZoomControls(false);
         settings.setDisplayZoomControls(false);
         settings.setSupportZoom(false);
+        settings.setMediaPlaybackRequiresUserGesture(false);
 
         CookieManager.getInstance().setAcceptCookie(true);
         CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true);
@@ -204,9 +185,7 @@ public class MainActivity extends Activity {
         webView.setWebChromeClient(new WebChromeClient() {
             @Override
             public boolean onShowFileChooser(WebView webView, ValueCallback<Uri[]> filePathCallback, FileChooserParams fileChooserParams) {
-                if (fileChooserCallback != null) {
-                    fileChooserCallback.onReceiveValue(null);
-                }
+                if (fileChooserCallback != null) fileChooserCallback.onReceiveValue(null);
                 fileChooserCallback = filePathCallback;
                 openImageChooser();
                 return true;
@@ -257,6 +236,23 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
+        public void shareText(String title, String text) {
+            final String safeTitle = title == null ? "Niez Animes" : title.substring(0, Math.min(title.length(), 200));
+            final String safeText = text == null ? "" : text.substring(0, Math.min(text.length(), 4000));
+            runOnUiThread(() -> {
+                try {
+                    Intent send = new Intent(Intent.ACTION_SEND);
+                    send.setType("text/plain");
+                    send.putExtra(Intent.EXTRA_SUBJECT, safeTitle);
+                    send.putExtra(Intent.EXTRA_TEXT, safeText);
+                    startActivity(Intent.createChooser(send, "Compartilhar anime"));
+                } catch (Exception e) {
+                    Toast.makeText(MainActivity.this, "Não foi possível compartilhar agora.", Toast.LENGTH_LONG).show();
+                }
+            });
+        }
+
+        @JavascriptInterface
         public String getAccountJson() {
             return accountJson();
         }
@@ -275,10 +271,21 @@ public class MainActivity extends Activity {
         return Math.round(value * getResources().getDisplayMetrics().density);
     }
 
-    @Override
-    public void onBackPressed() {
+    private void fallbackBack() {
         if (webView != null && webView.canGoBack()) webView.goBack();
         else super.onBackPressed();
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (webView == null) {
+            fallbackBack();
+            return;
+        }
+        String js = "(function(){try{var f=document.getElementById('appFrame');var w=f&&f.contentWindow;if(w&&typeof w.NiezHandleBack==='function')return !!w.NiezHandleBack();}catch(e){}return false;})()";
+        webView.evaluateJavascript(js, value -> {
+            if (!"true".equals(value)) fallbackBack();
+        });
     }
 
     @Override
@@ -298,4 +305,3 @@ public class MainActivity extends Activity {
         super.onDestroy();
     }
 }
-
